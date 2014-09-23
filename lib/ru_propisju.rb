@@ -193,6 +193,18 @@ module RuPropisju
     money(amount, locale, integrals_key, fractions_key, money_gender, true)
   end
 
+  # Выводит целое или дробное число как сумму в рублях прописью (копейки всегда указаны)
+  #
+  #   rublej(345) #=> "триста сорок пять рублей 00 копеек"
+  #
+  def rublej_with_kop(amount, locale = :ru)
+    integrals_key = :rub_integral
+    fractions_key = :rub_fraction
+    money_gender = MONEY_GENDERS[:rub]
+
+    money(amount, locale, integrals_key, fractions_key, money_gender, true, false, true)
+  end
+
   # Выводит целое или дробное число как сумму в расширенном формате
   #
   #   rublej_extended_format(345.2) #=> "345 рублей 20 копеек (триста сорок пять рублей 20 копеек)"
@@ -279,7 +291,7 @@ module RuPropisju
     elements.join(" ")
   end
 
-  def money(amount, locale, integrals_key, fractions_key, money_gender, fraction_as_number = false, integrals_as_number = false)
+  def money(amount, locale, integrals_key, fractions_key, money_gender, fraction_as_number = false, integrals_as_number = false, show_fraction_if_zerro = false)
     locale_data = pick_locale(TRANSLATIONS, locale)
     integrals = locale_data[integrals_key]
     fractions = locale_data[fractions_key]
@@ -295,12 +307,12 @@ module RuPropisju
 
     if amount.kind_of?(Float)
       remainder = (amount.divmod(1)[1]*100).round
-      if remainder == 100
+      if remainder == 100 && !show_fraction_if_zerro
         parts = [propisju_int(amount.to_i + 1, money_gender, integrals, locale)]
       else
         if fraction_as_number
           kop = remainder.to_i
-          unless kop.zero?
+          if show_fraction_if_zerro || !kop.zero?
             parts << kop << choose_plural(kop, fractions)
           end
         else
